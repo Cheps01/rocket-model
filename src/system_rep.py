@@ -8,25 +8,25 @@ def get_all_matrixes(state_system: list[sp.Eq], output_system: list[sp.Eq], stat
     A = zeros(len(states), len(states))
     for i, eq in enumerate(state_system):
         for j, st in enumerate(states):
-            A[i][j] = float(eq.rhs.coeff(st))
+            A[i][j] = eq.rhs.coeff(st)
 
     # Build B matrix (states x inputs)
     B = zeros(len(states), len(inputs))
     for i, eq in enumerate(state_system):
         for j, inp in enumerate(inputs):
-            B[i][j] = float(eq.rhs.coeff(inp))
+            B[i][j] = eq.rhs.coeff(inp)
 
     # Build C matrix (outputs x states)
     C = zeros(len(outputs), len(states))
     for i, eq in enumerate(output_system):
         for j, st in enumerate(states):
-            C[i][j] = float(eq.rhs.coeff(st))
+            C[i][j] = eq.rhs.coeff(st)
 
     # Build D matrix (outputs x inputs)
     D = zeros(len(outputs), len(inputs))
     for i, eq in enumerate(output_system):
         for j, inp in enumerate(inputs):
-            D[i][j] = float(eq.rhs.coeff(inp))
+            D[i][j] = eq.rhs.coeff(inp)
 
     # Return system representation matrixes
     return A, B, C, D
