@@ -1,5 +1,4 @@
 import sympy as sp
-import numpy as np
 
 def zeros(height: int, width: int) -> list:
     return [[0 for _ in range(width)] for _ in range(height)]
