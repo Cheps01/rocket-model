@@ -1,10 +1,13 @@
+import numpy as np
+from sympy import re
+
 class SystemProps:
     @staticmethod
     def is_stable(A: np.ndarray) -> bool:
         eigen = np.linalg.eigvals(A)
         for e in eigen:
             if (re(e) >= 0):
-            return False
+                return False
         return True
     @staticmethod
     def is_controlable(A: np.ndarray, B: np.ndarray) -> bool:
