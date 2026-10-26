@@ -30,3 +30,42 @@ def get_all_matrixes(state_system: list[sp.Eq], output_system: list[sp.Eq], stat
 
     # Return system representation matrixes
     return A, B, C, D
+
+def display_state_equations(A: list, B: list, C: list, D: list, states: list[sp.Symbol], inputs: list[sp.Symbol]):
+    print("STATE EQUATIONS")
+    print("-" * 60)
+
+    for i in range(len(A)):
+        terms = []
+
+        for j in range(len(states)):
+            coefficient = A[i][j]
+            if coefficient != 0:
+                terms.append(f"({coefficient})*{states[j]}")
+
+        for j in range(len(inputs)):
+            coefficient = B[i][j]
+            if coefficient != 0:
+                terms.append(f"({coefficient})*{inputs[j]}")
+
+        rhs = " + ".join(terms).replace("+ (-", "- (")
+        print(f"dx{i+1}/dt = {rhs}")
+
+    print("\nOUTPUT EQUATIONS")
+    print("-" * 60)
+
+    for i in range(len(C)):
+        terms = []
+
+        for j in range(len(states)):
+            coefficient = C[i][j]
+            if coefficient != 0:
+                terms.append(f"({coefficient})*{states[j]}")
+
+        for j in range(len(inputs)):
+            coefficient = D[i][j]
+            if coefficient != 0:
+                terms.append(f"({coefficient})*{inputs[j]}")
+
+        rhs = " + ".join(terms).replace("+ (-", "- (")
+        print(f"y{i+1} = {rhs}")
