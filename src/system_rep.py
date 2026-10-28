@@ -78,17 +78,17 @@ def numeric_matrixes(A: list, B: list, C: list, D: list, sym: dict):
     for i in range(len(A)):
         a.append([])
         for j in range(len(A[i])):
-            a[i].append(A[i][j].subs(sym))
+            a[i].append(float(A[i][j].subs(sym)))
     for i in range(len(B)):
         b.append([])
         for j in range(len(B[i])):
-            b[i].append(B[i][j].subs(sym))
+            b[i].append(float(B[i][j].subs(sym)))
     for i in range(len(C)):
         c.append([])
         for j in range(len(C[i])):
-            c[i].append(C[i][j].subs(sym))
+            c[i].append(float(C[i][j].subs(sym)))
     for i in range(len(D)):
         d.append([])
         for j in range(len(D[i])):
-            d[i].append(D[i][j].subs(sym))      
+            d[i].append(float(D[i][j].subs(sym)))      
     return a, b, c, d
