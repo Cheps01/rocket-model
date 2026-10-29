@@ -19,7 +19,5 @@ class SystemProps:
     @staticmethod
     def is_observable(A: np.ndarray, C: np.ndarray) -> bool:
         n = A.shape[0]
-        O = np.zeros((n, n))
-        for i in range(n):
-            O[:, i] = (C @ np.linalg.matrix_power(A, i))[:,0]
+        O = np.vstack([C @ np.linalg.matrix_power(A, i) for i in range(n)])
         return np.linalg.matrix_rank(O) == n
