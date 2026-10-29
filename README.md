@@ -1,144 +1,140 @@
-# Modelo MIMO de un Cohete — Análisis de Control
+# Modelo MIMO de un cohete: análisis de estabilidad, respuesta y control
 
-Proyecto de análisis y control de la dinámica de un cohete modelado como un sistema **MIMO (multiple-input multiple-output)** de 4 estados, con dos entradas de control (canal de empuje y canal de dirección/tobera) y dos salidas medidas (aceleración axial y ángulo de cabeceo).
+[![Abrir en Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Cheps01/rocket-model/blob/main/analysis.ipynb)
 
-Todo el análisis se realiza en el cuaderno `analysis.ipynb`, apoyado por módulos auxiliares en la carpeta `src/`.
+Código y cuaderno de análisis que acompañan al artículo **«TÍTULO DEL PAPER»** (AUTORES, AÑO).
+El repositorio modela un cohete como un sistema **MIMO lineal de 4 estados, 2 entradas y 2 salidas**, y calcula su función de transferencia, estabilidad, respuesta temporal y en frecuencia, observabilidad y controlabilidad, en función de dos ganancias de control (K1, K2).
 
-## Modelo del sistema
+> **Cómo citar:** ver [Citación](#citación). Para reproducir los resultados del artículo, ir directo a [Reproducir los resultados](#reproducir-los-resultados).
 
-El sistema se define mediante un modelo en espacio de estados con las siguientes variables:
+---
 
-| Tipo | Variables | Descripción |
-|------|-----------|-------------|
-| Estados | $a(t),\ \theta(t),\ \omega(t),\ \delta(t)$ | Aceleración axial, ángulo de cabeceo, velocidad angular, ángulo de deflexión de la tobera |
-| Entradas | $u_1(t),\ u_2(t)$ | Comando de empuje del motor y comando de orientación de la tobera |
-| Salidas | $y_1(t),\ y_2(t)$ | Aceleración axial medida y ángulo de cabeceo medido |
+## Índice
 
-Ganancias ajustables:
+1. [Contenido del repositorio](#contenido-del-repositorio)
+2. [El modelo en una página](#el-modelo-en-una-página)
+3. [Mapa artículo ↔ cuaderno](#mapa-artículo--cuaderno)
+4. [Reproducir los resultados](#reproducir-los-resultados)
+5. [Limitaciones conocidas](#limitaciones-conocidas)
+6. [Citación y licencia](#citación)
 
-- **K1**: ganancia del canal de empuje (retroalimentación de aceleración axial).
-- **K2**: ganancia del canal de dirección (movimiento de la tobera para corregir la actitud).
-- **T**: período de muestreo del controlador digital.
+---
 
-Constantes físicas del cohete: ganancia del actuador ($k_a$), ancho de banda del motor ($1/T_m$), acoplamiento gravitatorio ($c_\theta$), rigidez aerodinámica ($\mu$), amortiguamiento aerodinámico ($a_d$), efectividad de la tobera ($k_\delta$), acoplamiento por desalineación ($k_\varepsilon$), ancho de banda del servo ($1/T_s$) y proporción velocidad/posición de la IMU ($\lambda$).
+## Contenido del repositorio
 
-## Cálculos y análisis realizados
+| Ruta | Qué contiene | Se usa en |
+|------|--------------|-----------|
+| [`analysis.ipynb`](analysis.ipynb) | Todo el análisis, secciones (A) a (F), con salidas ya guardadas (se puede leer sin ejecutar) | Artículo, secciones X–Y |
+| [`simulation-diagram.jpeg`](simulation-diagram.jpeg) | Diagrama de simulación del lazo de control | Artículo, Fig. N |
+| [`src/system_rep.py`](src/system_rep.py) | Extracción simbólica de las matrices A, B, C, D desde las ecuaciones (SymPy), sustitución numérica e impresión de las ecuaciones | Cuaderno, secciones 3–4 |
+| [`src/properties.py`](src/properties.py) | `SystemProps`: pruebas de estabilidad, controlabilidad y observabilidad por rango | Cuaderno, secciones 11–12 |
+| `requirements.txt` | Dependencias con versiones fijadas | — |
 
-El cuaderno está organizado en seis secciones:
+---
 
-### (A) Modelado del sistema
-1. **Análisis del sistema**: descripción física de cada bloque y parámetro del modelo.
-2. **Diagrama de simulación**: esquema del lazo de control (sensores A/D, computadora con control K1/K2, D/A, amplificadores, dinámica del cohete).
-3. **Ecuación de estados**: extracción simbólica de las matrices $A$, $B$, $C$ y $D$ a partir del sistema de ecuaciones diferenciales (con SymPy).
-4. **Función de transferencia**: matriz de transferencia MIMO simbólica $G(p) = C(pI - A)^{-1}B$, con las 4 funciones $G_{11}, G_{12}, G_{21}, G_{22}$.
-5. **Ecuación de salida**: relación entre los estados y las salidas medidas.
+## El modelo en una página
 
-### (B) Estabilidad y respuesta temporal
-6. **Estabilidad del sistema**: polinomio característico $\det(pI - A)$, cálculo de polos y **mapa de estabilidad en el plano $(K_1, K_2)$** evaluando los autovalores de $A$ sobre una malla de ganancias.
-7. **Respuesta temporal**: respuesta a distintas señales de entrada (pulso escalonado, senoidal e impulso de Dirac) en cada canal y en ambos simultáneamente, para varios pares de ganancias $(K_1, K_2)$, mediante `scipy.signal.lsim`.
-8. **Cuantificación de acoplamiento**: separación de la respuesta de cada canal ($u_1 \to y$ y $u_2 \to y$) para cuantificar el acoplamiento entre los subsistemas.
-
-### (C) Respuesta en frecuencia
-9. **Respuesta en frecuencia**: diagramas de magnitud $|G_{ij}(j\omega)|$ de los 4 canales al variar $K_2$ de 0.10 a 1.00.
-10. **Ancho de banda y pico de resonancia**: diagramas de Bode con cálculo del **ancho de banda a −3 dB** por canal, ganancia en régimen permanente (DC) y verificación del pico de resonancia.
-
-### (D) Observabilidad y controlabilidad
-11. **Observabilidad**: matriz de observabilidad $\mathcal{O} = [C;\ CA;\ CA^2;\ CA^3]$ y verificación del rango completo para tres configuraciones de sensores (solo acelerómetro, solo ángulo, ambos).
-12. **Controlabilidad**: matriz de controlabilidad $\mathcal{C} = [B,\ AB,\ A^2B,\ A^3B]$ y verificación del rango completo para tres configuraciones de entrada (solo empuje, solo orientación, ambos comandos), incluyendo el caso $K_2 = 0$ donde el sistema **pierde controlabilidad** (el estado $\delta$ queda fuera del alcance de las entradas).
-
-### (E) y (F)
-- **Selección de ganancias y muestreo**: espacio reservado para el diseño del controlador.
-- **Conclusiones**: espacio reservado para las conclusiones del análisis.
-
-## Estructura del proyecto
+**Estados** `x = [a, θ, ω, δ]ᵀ`, **entradas** `u = [u₁, u₂]ᵀ`, **salidas** `y = [a, θ]ᵀ`.
 
 ```
-rocket-model/
-├── analysis.ipynb        # Cuaderno con todo el análisis
-├── src/
-│   ├── __init__.py
-│   ├── system_rep.py     # Construcción de matrices A,B,C,D, sustitución numérica y display
-│   └── properties.py     # SystemProps: is_stable, is_controlable, is_observable
-└── README.md
+da/dt = -(1 + K1·ka)/Tm · a  -  cθ · θ  +  (K1·ka/Tm) · u1
+dθ/dt = ω
+dω/dt = kε · a  +  μ · θ  -  ad · ω  +  kδ · δ
+dδ/dt = -(1/Ts) · δ  -  (K2/Ts) · θ  -  (λ·K2/Ts) · ω  +  (K2/Ts) · u2
 ```
 
-## Requisitos
+| Símbolo en el artículo / diagrama | Variable en el código | Significado | Valor |
+|---|---|---|---|
+| `a` (`α` en el diagrama) | `acc` | Aceleración axial | estado |
+| `θ` | `theta` | Ángulo de cabeceo | estado |
+| `ω` | `omega` | Velocidad angular de cabeceo | estado |
+| `δ` | `delta` | Deflexión de la tobera | estado |
+| `u₁`, `u₂` | `u1`, `u2` | Comando de empuje, comando de tobera | entradas |
+| `K1`, `K2` | `k1`, `k2` | Ganancias de los canales de empuje y de dirección | parámetros de diseño |
+| `ka` | `ka` | Ganancia del actuador | 0.0655 |
+| `1/Tm` | `inv_tm` | Ancho de banda del motor | 1.0672 |
+| `cθ` | `c0` | Acoplamiento gravitatorio | 9.81 |
+| `μ` | `mu` | Rigidez aerodinámica | 1.20 |
+| `ad` | `ad` | Amortiguamiento aerodinámico | 0.35 |
+| `kδ` | `kd` | Efectividad de la tobera | 8.5 |
+| `kε` | `ke` | Acoplamiento por desalineación | 0.12 |
+| `Ts` (`1/Ts` = 20) | `ts` | Constante de tiempo del servo | 0.05 |
+| `λ` | `lmd` | Proporción velocidad/posición de la IMU | 0.6 |
 
-- Python 3.10 o superior
-- `sympy`, `numpy`, `scipy`, `matplotlib`
+Punto de operación nominal usado en el artículo: **K1 = 1.00, K2 = 0.50**.
 
-Instalación local:
+---
 
-```bash
-pip install sympy numpy scipy matplotlib
-```
+## Mapa artículo ↔ cuaderno
 
-## Ejecución local
+| Artículo | Sección del cuaderno | Qué se calcula |
+|---|---|---|
+| Sec. X | **(A)** 1–2. Análisis y diagrama de simulación | Descripción física de bloques y parámetros |
+| Sec. X | **(A)** 3–5. Ecuación de estados, función de transferencia, ecuación de salida | Matrices A, B, C, D simbólicas; `G(p) = C(pI − A)⁻¹B` con `G₁₁, G₁₂, G₂₁, G₂₂` |
+| Sec. X | **(B)** 6. Estabilidad | Polinomio característico, polos y mapa de estabilidad en el plano (K1, K2) |
+| Sec. X | **(B)** 7. Respuesta temporal | Escalón, senoidal e impulso, por canal y simultáneos, para varios pares (K1, K2) |
+| Sec. X | **(B)** 8. Acoplamiento | Respuesta de u₁→y y u₂→y por separado |
+| Sec. X | **(C)** 9–10. Respuesta en frecuencia | Magnitud de los 4 canales al variar K2 de 0.10 a 1.00; ancho de banda a −3 dB, ganancia DC, pico de resonancia |
+| Sec. X | **(D)** 11. Observabilidad | Rango de `[C; CA; CA²; CA³]` con solo acelerómetro, solo ángulo y ambos (los tres: rango 4) |
+| Sec. X | **(D)** 12. Controlabilidad | Rango de `[B, AB, A²B, A³B]` con solo empuje, solo tobera y ambos (K2 = 0.5: rango 4; K2 = 0: rango 3, el estado δ deja de ser alcanzable) |
+| Sec. X | **(E)** Selección de ganancias | Rangos de operación propuestos: 1.00 ≤ K1 ≤ 1.50 y 0.40 ≤ K2 ≤ 0.68 |
+| Sec. X | **(F)** Conclusiones | Resumen del efecto de K1 y K2 |
 
-```bash
-git clone https://github.com/Cheps01/rocket-model.git
-cd rocket-model
-jupyter notebook analysis.ipynb
-```
+> Completar la columna «Artículo» con los números de sección y figura del paper.
 
-Una vez abierto, usar **Cell → Run All** para ejecutar todo el cuaderno.
+---
 
-## Ejecución en Google Colab
+## Reproducir los resultados
 
-### Opción 1: clonar desde GitHub (recomendada)
+Requisitos: Python 3.10 o superior.
 
-1. Abrir un notebook en [Google Colab](https://colab.research.google.com/).
-2. En una celda de código, clonar el repositorio y entrar a la carpeta:
+**Opción 1: Google Colab (sin instalar nada).** Abrir el cuaderno con el botón *Abrir en Colab* de arriba y, antes de ejecutar nada, correr esta celda para traer el código de `src/` y las dependencias:
 
 ```python
 !git clone https://github.com/Cheps01/rocket-model.git
 %cd rocket-model
+!pip install -q -r requirements.txt
 ```
 
-3. Instalar las dependencias:
+Luego usar **Runtime → Run all**. El cuaderno busca `src/__init__.py` desde el directorio de trabajo, así que el directorio actual debe ser la raíz del repositorio.
 
-```python
-!pip install -q sympy numpy scipy matplotlib
+**Opción 2: local.**
+
+```bash
+git clone https://github.com/Cheps01/rocket-model.git
+cd rocket-model
+python -m venv .venv && source .venv/bin/activate   # en Windows: .venv\Scripts\activate
+pip install -r requirements.txt
+jupyter notebook analysis.ipynb
 ```
 
-4. Subir el cuaderno `analysis.ipynb` desde la máquina local: en el panel izquierdo de Colab (icono de carpeta → **Archivos** → icono de subir) seleccionar `analysis.ipynb`, o bien usar `files.upload()`:
+**Opción 3: ejecutar sin abrir Jupyter.**
 
-```python
-from google.colab import files
-files.upload()  # seleccionar analysis.ipynb
+```bash
+jupyter nbconvert --to notebook --execute analysis.ipynb --output analysis_ejecutado.ipynb
 ```
 
-5. Verificar que la celda de rutas encuentre el paquete `src/` (la celda ya busca `src/__init__.py` desde el directorio de trabajo hacia arriba, por lo que basta con que el cwd sea la raíz del proyecto):
+El cuaderno tarda unos minutos por los barridos sobre la malla de ganancias y las gráficas de respuesta temporal.
 
-```python
-import os
-os.chdir('/content/rocket-model')
-print(os.getcwd())  # debe imprimir .../rocket-model
+---
+
+## Limitaciones conocidas
+
+- Modelo **lineal e invariante en el tiempo**, linealizado alrededor de un punto de operación; no incluye saturaciones ni perturbaciones.
+- El período de muestreo `T` está definido como parámetro, pero el análisis se hace en tiempo continuo; el diseño del controlador discreto queda fuera del alcance de este repositorio.
+
+---
+
+## Citación
+
+```bibtex
+@misc{rocket-model,
+  author = {AUTORES},
+  title  = {rocket-model: análisis MIMO de un cohete},
+  year   = {AÑO},
+  url    = {https://github.com/Cheps01/rocket-model},
+  note   = {Versión vX.Y, DOI: 10.5281/zenodo.XXXXXXX}
+}
 ```
 
-6. Ejecutar todo el cuaderno: **Runtime → Run all** (o `Ctrl+F9`).
-
-### Opción 2: subir el proyecto como ZIP
-
-Si no se desea clonar desde Git:
-
-```python
-from google.colab import files
-import zipfile, os
-
-uploaded = files.upload()  # subir rocket-model.zip
-
-with zipfile.ZipFile('rocket-model.zip', 'r') as z:
-    z.extractall('/content')
-
-os.chdir('/content/rocket-model')  # ajustar si el ZIP tiene otra estructura
-!pip install -q sympy numpy scipy matplotlib
-```
-
-Luego subir/abrir `analysis.ipynb` y usar **Runtime → Run all**.
-
-### Notas para Colab
-
-- La primera celda del cuaderno inserta la raíz del proyecto en `sys.path` buscando `src/__init__.py`; por eso es importante ejecutar todo con el directorio de trabajo en la raíz del repositorio (`/content/rocket-model`).
-- Los gráficos se generan con `matplotlib` y se muestran automáticamente en línea en Colab.
-- El cuaderno tarda unos minutos en completarse debido a los bucles de análisis sobre mallas de ganancias y las gráficas de respuesta temporal.
+Licencia: ver [`LICENSE`](LICENSE).
